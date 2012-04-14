@@ -3,7 +3,9 @@ ower consumption indicator for Unity
 Uses DBus for reading data from UPower
 
 - USAGE
-Just run abi.py to try. No installer yet, sorry.
+Just run abi.py to try. 
+No installer yet, sorry, if you like it, you can manually add it to
+the Startup Applications in Ubuntu.
 
 - COPYRIGHT
 Copyright 2012 Oleg Zaytsev <lambroso@gmail.com>
