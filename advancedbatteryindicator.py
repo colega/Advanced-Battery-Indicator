@@ -79,9 +79,6 @@ class AdvancedBatteryIndicator:
 		formatMenuItem.set_submenu(formatSubMenu);
 		self.menu.append(formatMenuItem);
 		
-		print self.prefs;
-		
-		
 		updateIntervalMenuItem = gtk.MenuItem("Update interval");
 		updateIntervalSubMenu = gtk.Menu();
 		
@@ -103,8 +100,6 @@ class AdvancedBatteryIndicator:
 				
 		updateIntervalMenuItem.set_submenu(updateIntervalSubMenu);
 		self.menu.append(updateIntervalMenuItem);
-				
-		print self.prefs;
 		
 		separator2 = gtk.SeparatorMenuItem();
 		self.menu.append(separator2);
@@ -144,7 +139,6 @@ class AdvancedBatteryIndicator:
 		except:
 			print "Loading default config";
 			self.prefs = {'watts': True, 'updateInterval':0.5};
-		print self.prefs;
 		
 	def saveConfig(self):
 		try:
@@ -154,10 +148,8 @@ class AdvancedBatteryIndicator:
 			f = open(configDir+'/config.pickle', 'w');
 			pickle.dump(self.prefs, f);
 			print "Configuration saved at "+configDir+'/config.pickle';
-			print self.prefs;
 			f.close();
 		except:
-			raise;
 			# TODO: What's going wrong?
 			print "Something went wrong while saving config...";
 	
