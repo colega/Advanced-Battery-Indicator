@@ -66,13 +66,16 @@ class AdvancedBatteryIndicator:
 		
 		formatMenuItem = gtk.MenuItem('Units');
 		radioWatts = gtk.RadioMenuItem(None, "Watts");
-		radioWatts.connect("activate", lambda e: self.prefs.__setitem__('watts',True));
+		radioWatts.connect("toggled", lambda e: self.prefs.__setitem__('watts',True));
 		formatSubMenu = gtk.Menu();
 		formatSubMenu.append(radioWatts);
-		radioWatts.activate();
-		radioMilliamperes = gtk.RadioMenuItem(radioWatts, "Milliampers");
-		radioMilliamperes.connect("activate", lambda e: self.prefs.__setitem__('watts',False));
+		if (self.prefs['watts'])
+			radioWatts.set_active();
+		radioMilliamperes = gtk.RadioMenuItem(radioWatts, "Milliamperes");
+		radioMilliamperes.connect("toggled", lambda e: self.prefs.__setitem__('watts',False));
 		formatSubMenu.append(radioMilliamperes);
+		if (not self.prefs['watts'])
+			radioMilliamperes.set_active();
 		formatMenuItem.set_submenu(formatSubMenu);
 		self.menu.append(formatMenuItem);
 		
