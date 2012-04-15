@@ -12,6 +12,11 @@ When discharging: shows current energy consumption / energy left
 When charging: shows current energy / last full battery seen energy
 When charged: shows energy in the battery
 
+- CONFIGURATION
+Configuration will be automatically saved into:
+	~/.config/advancedbatteryindicator/config.pickle
+Using python pickle module.
+
 - COPYRIGHT
 Copyright 2012 Oleg Zaytsev <lambroso@gmail.com>
 
