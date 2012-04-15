@@ -71,7 +71,8 @@ class AdvancedBatteryIndicator:
 	def createMenu(self):
 		self.menu = gtk.Menu();
 		
-		self.noBatteryMenuItem = gtk.MenuItem('No battery found');
+		self.noBatteryMenuItem = gtk.ImageMenuItem(gtk.STOCK_DISCONNECT);
+		self.noBatteryMenuItem.set_label("No battery found.")
 		self.noBatteryMenuItem.set_no_show_all(True);
 		self.menu.append(self.noBatteryMenuItem);
 		self.noBatteryMenuSeparator = gtk.SeparatorMenuItem();
@@ -228,7 +229,7 @@ class AdvancedBatteryIndicator:
 			# Sleep
 			time.sleep(self.prefs['updateInterval']);
 	
-	# Main gtk loop	
+	# Main gtk loopn	
 	def main(self):
 		gtk.gdk.threads_enter();
 		gtk.main();
