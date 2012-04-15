@@ -27,24 +27,46 @@ import pickle;
 from optparse import OptionParser
 
 class AdvancedBatteryIndicator:
-	def __init__(self, options):
-		self.options = options;
+	def __init__(self):
+		# Parse running options
+		self.parseOptions();
+		
+		# Initiate gtk multithreading
+		gtk.gdk.threads_init();
+		# Connect DBus to UPower
 		self.initDBus();
 		
+		# Just an event to stop the updater thread
 		self.finished = threading.Event();
 		
+		# Load configuration from ~/.config/advancedbatteryindicator/config.pickle
 		self.loadConfig();
 		
+		# Create the indicator
 		self.createIndicator();
+		# Create the indicator menu
 		self.createMenu();
 		
+		# Start the updater thread
 		self.startUpdater();
 		
+		# Run main gtk loop
+		self.main();
+	
+	# Will parse the script options and save them to self.options
+	def parseOptions(self):	
+		parser = OptionParser();
+		parser.add_option("--noconfig", action="store_true",dest="noConfig",help="Do not save or load config.");
+		parser.add_option("--noquit", action="store_true",dest="noQuitOption",help="Do not show 'Quit' menu option.");
+		parser.add_option("--debug", action="store_true", dest="debug",help="Show misc debug info.");
+		parser.add_option("--debugall", action="store_true", dest="debugAll",help="Show all debug info");
+		(self.options, args) = parser.parse_args();
+		if self.options.debugAll:
+			self.options.debug = True;
 		
 	def createIndicator(self):
 		self.ind = appindicator.Indicator("example-simple-client", "indicator-battery", appindicator.CATEGORY_APPLICATION_STATUS);
 		self.ind.set_status(appindicator.STATUS_ACTIVE);
-		
 		
 	def createMenu(self):
 		self.menu = gtk.Menu();
@@ -103,7 +125,7 @@ class AdvancedBatteryIndicator:
 		updateIntervalMenuItem.set_submenu(updateIntervalSubMenu);
 		self.menu.append(updateIntervalMenuItem);
 		
-		if not options.noQuitOption:
+		if not self.options.noQuitOption:
 			separatorQuit = gtk.SeparatorMenuItem();
 			self.menu.append(separatorQuit);
 		
@@ -113,27 +135,24 @@ class AdvancedBatteryIndicator:
         
 		self.menu.show_all();
 		self.ind.set_menu(self.menu);		
-		
+	
+	# Start updater thread	
 	def startUpdater(self):
 		self.updaterThread = threading.Thread(target=self.update);
 		self.updaterThread.start();
 	
 	def initDBus(self):
+		# DBus bus
 		self.bus = dbus.SystemBus();
-		self.bat = self.bus.get_object('org.freedesktop.UPower', '/org/freedesktop/UPower/devices/battery_BAT0')
-		self.refresh = self.bat.get_dbus_method('Refresh', dbus_interface='org.freedesktop.UPower.Device');
-
-	def showWatts(self, widget, data=None):
-		self.format = 1;
-	
-	def showMilliampers(self, widget, data=None):
-		self.format = 0;
+		# Battery proxy
+		self.bat = self.bus.get_object('org.freedesktop.UPower', '/org/freedesktop/UPower/devices/battery_BAT0');
 	
 	def quit(self, widget, data=None):
 		self.saveConfig();
 		self.finished.set();
 		gtk.main_quit();
-		
+	
+	# Load the configuration	
 	def loadConfig(self):	
 		try:
 			if self.options.noConfig:
@@ -144,7 +163,8 @@ class AdvancedBatteryIndicator:
 		except:
 			print "Loading default config";
 			self.prefs = {'watts': True, 'updateInterval':0.5};
-		
+	
+	# Save the configuration
 	def saveConfig(self):
 		if not self.options.noConfig:
 			try:
@@ -159,16 +179,19 @@ class AdvancedBatteryIndicator:
 				# TODO: What's going wrong?
 				print "Something went wrong while saving config...";
 	
+	# Updater thread main loop
 	def update(self):
+		# We stop if the finished event is set
 		while not self.finished.is_set():
+			# Try to acces the interface, it will fail if there is no battery
 			try:
-				self.refresh();
-				
+				self.bat.Refresh(dbus_interface='org.freedesktop.UPower.Device');
 				props =  self.bat.GetAll('org.freedesktop.UPower.Device', dbus_interface='org.freedesktop.DBus.Properties');
 				
 				self.noBatteryMenuItem.hide();
 				self.noBatteryMenuSeparator.hide();
 				
+				# Debug print
 				if self.options.debugAll:
 					print "------ START UPOWER DUMP:"+str(time.ctime(time.time()))+"------"
 					for i in props:
@@ -194,6 +217,7 @@ class AdvancedBatteryIndicator:
 				else:
 					self.ind.set_label(energy);
 			except:
+				# Probably no battery present.
 				print "Refresh failed. Maybe no battery present?";
 				self.ind.set_label('N/A');
 				self.healthMenuItem.set_label('Battery health: N/A');
@@ -201,22 +225,14 @@ class AdvancedBatteryIndicator:
 				
 				self.noBatteryMenuItem.show();
 				self.noBatteryMenuSeparator.show();
+			# Sleep
 			time.sleep(self.prefs['updateInterval']);
-		
+	
+	# Main gtk loop	
 	def main(self):
+		gtk.gdk.threads_enter();
 		gtk.main();
+		gtk.gdk.threads_leave();
 
 if __name__ == "__main__":
-	parser = OptionParser();
-	parser.add_option("--noconfig", action="store_true",dest="noConfig",help="Do not save or load config.");
-	parser.add_option("--noquit", action="store_true",dest="noQuitOption",help="Do not show 'Quit' menu option.");
-	parser.add_option("--debug", action="store_true", dest="debug",help="Show misc debug info.");
-	parser.add_option("--debugall", action="store_true", dest="debugAll",help="Show all debug info");
-	(options, args) = parser.parse_args();
-	if options.debugAll:
-		options.debug = True;
-	gtk.gdk.threads_init();
-	indicator = AdvancedBatteryIndicator(options);	
-	gtk.gdk.threads_enter()
-	indicator.main();
-	gtk.gdk.threads_leave()
+	indicator = AdvancedBatteryIndicator();	
