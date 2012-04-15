@@ -67,6 +67,15 @@ class AdvancedBatteryIndicator:
 	def createIndicator(self):
 		self.ind = appindicator.Indicator("example-simple-client", "indicator-battery", appindicator.CATEGORY_APPLICATION_STATUS);
 		self.ind.set_status(appindicator.STATUS_ACTIVE);
+	
+	def runPowerStatistics(self,widget):
+		self.powerStatisticsThread = threading.Thread(target=self.powerStatistics);
+		self.powerStatisticsThread.daemon = True;
+		self.powerStatisticsThread.start();
+		
+	def powerStatistics(self):
+		os.system('gnome-power-statistics');
+		
 		
 	def createMenu(self):
 		self.menu = gtk.Menu();
@@ -83,12 +92,21 @@ class AdvancedBatteryIndicator:
 		self.menu.append(self.voltageMenuItem);
 		
 		self.healthMenuItem = gtk.MenuItem("Battery health: no data");
-		self.healthMenuItem.set_tooltip_text('Hoho');
 		self.menu.append(self.healthMenuItem);
 		
 		
 		separator = gtk.SeparatorMenuItem();
 		self.menu.append(separator);
+		
+		powerStatisticsItem = gtk.MenuItem('Power statistics');
+		powerStatisticsItem.connect("activate", self.runPowerStatistics);
+		powerStatisticsItem.show();
+		self.menu.append(powerStatisticsItem);
+		
+		separator2 = gtk.SeparatorMenuItem();
+		self.menu.append(separator2);
+		
+		
 		
 		formatMenuItem = gtk.MenuItem('Units');
 		radioWatts = gtk.RadioMenuItem(None, "Watts");
