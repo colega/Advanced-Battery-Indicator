@@ -144,6 +144,12 @@ class AdvancedBatteryIndicator:
 		updateIntervalMenuItem.set_submenu(updateIntervalSubMenu);
 		self.menu.append(updateIntervalMenuItem);
 		
+		self.showEnergyFullCheckItem = gtk.CheckMenuItem('Show energy full');
+		self.showEnergyFullCheckItem.connect("activate", self.toggleShowEnergyFull);
+		self.showEnergyFullCheckItem.show();
+		self.showEnergyFullCheckItem.set_active(self.prefs['showEnergyFull']);
+		self.menu.append(self.showEnergyFullCheckItem);
+		
 		if not self.options.noQuitOption:
 			separatorQuit = gtk.SeparatorMenuItem();
 			self.menu.append(separatorQuit);
@@ -154,6 +160,9 @@ class AdvancedBatteryIndicator:
         
 		self.menu.show_all();
 		self.ind.set_menu(self.menu);		
+	
+	def toggleShowEnergyFull(self,widget):
+		self.prefs['showEnergyFull'] = self.showEnergyFullCheckItem.get_active();
 	
 	# Start updater thread	
 	def startUpdater(self):
@@ -173,15 +182,22 @@ class AdvancedBatteryIndicator:
 	
 	# Load the configuration	
 	def loadConfig(self):	
+		self.defaultPrefs = {'watts': True, 'updateInterval':0.5, 'showEnergyFull' : True};
 		try:
 			if self.options.noConfig:
 				raise;
 			f = open(os.path.expanduser('~/.config/advancedbatteryindicator/config.pickle'), 'r');
 			self.prefs = pickle.load(f);
+			if (len(self.prefs) != len(self.defaultPrefs)):
+				print "Configuration length incorrect. Maybe old version configuration?";
+				raise;
 			f.close();
 		except:
 			print "Loading default config";
-			self.prefs = {'watts': True, 'updateInterval':0.5};
+			self.prefs = self.defaultPrefs;
+		if self.options.debug:
+			print "Config:",
+			print self.prefs;
 	
 	# Save the configuration
 	def saveConfig(self):
@@ -230,7 +246,10 @@ class AdvancedBatteryIndicator:
 				if (props['State'] == 2):
 					self.ind.set_label(rate + " / " + energy);
 				elif (props['State'] == 1):
-					self.ind.set_label(energy + " / " + energyFull);
+						if (self.prefs['showEnergyFull']):
+							self.ind.set_label(energy + " / " + energyFull);
+						else:
+							self.ind.set_label(energy);							
 				elif (props['State'] == 4):
 					self.ind.set_label(energy);
 				else:

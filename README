@@ -23,6 +23,12 @@ Using python pickle module.
 You can deactivate the configuration (reading/writing) by the --noconfig
 option.
 
+- BUGS
+There is a bug in upower and it sometimes shows too high values for the
+energy-full property. All you can do is disable "Show energy full"
+option in the menu. Sorry.
+https://bugs.launchpad.net/ubuntu/+source/upower/+bug/583271
+
 - COPYRIGHT
 Copyright 2012 Oleg Zaytsev <lambroso@gmail.com>
 
