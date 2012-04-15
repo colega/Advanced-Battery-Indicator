@@ -30,7 +30,7 @@ class AdvancedBatteryIndicator:
 	def __init__(self, options):
 		self.options = options;
 		self.initDBus();
-		print options.noconfig;
+		
 		self.finished = threading.Event();
 		
 		self.loadConfig();
@@ -103,12 +103,13 @@ class AdvancedBatteryIndicator:
 		updateIntervalMenuItem.set_submenu(updateIntervalSubMenu);
 		self.menu.append(updateIntervalMenuItem);
 		
-		separator2 = gtk.SeparatorMenuItem();
-		self.menu.append(separator2);
+		if not options.noQuitOption:
+			separatorQuit = gtk.SeparatorMenuItem();
+			self.menu.append(separatorQuit);
 		
-		quitMenuItem = gtk.MenuItem('Quit');
-		quitMenuItem.connect("activate", self.quit);
-		self.menu.append(quitMenuItem);
+			quitMenuItem = gtk.MenuItem('Quit');
+			quitMenuItem.connect("activate", self.quit);
+			self.menu.append(quitMenuItem);
         
 		self.menu.show_all();
 		self.ind.set_menu(self.menu);		
@@ -135,6 +136,8 @@ class AdvancedBatteryIndicator:
 		
 	def loadConfig(self):	
 		try:
+			if self.options.noConfig:
+				raise;
 			f = open(os.path.expanduser('~/.config/advancedbatteryindicator/config.pickle'), 'r');
 			self.prefs = pickle.load(f);
 			f.close();
@@ -143,17 +146,18 @@ class AdvancedBatteryIndicator:
 			self.prefs = {'watts': True, 'updateInterval':0.5};
 		
 	def saveConfig(self):
-		try:
-			configDir = os.path.expanduser('~/.config/advancedbatteryindicator');
-			if not os.path.isdir(configDir):
-				os.makedirs(configDir);
-			f = open(configDir+'/config.pickle', 'w');
-			pickle.dump(self.prefs, f);
-			print "Configuration saved at "+configDir+'/config.pickle';
-			f.close();
-		except:
-			# TODO: What's going wrong?
-			print "Something went wrong while saving config...";
+		if not self.options.noConfig:
+			try:
+				configDir = os.path.expanduser('~/.config/advancedbatteryindicator');
+				if not os.path.isdir(configDir):
+					os.makedirs(configDir);
+				f = open(configDir+'/config.pickle', 'w');
+				pickle.dump(self.prefs, f);
+				print "Configuration saved at "+configDir+'/config.pickle';
+				f.close();
+			except:
+				# TODO: What's going wrong?
+				print "Something went wrong while saving config...";
 	
 	def update(self):
 		while not self.finished.is_set():
@@ -165,9 +169,12 @@ class AdvancedBatteryIndicator:
 				self.noBatteryMenuItem.hide();
 				self.noBatteryMenuSeparator.hide();
 				
-				for i in props:
-					pass;
-					#print i,':',props[i];
+				if self.options.debugAll:
+					print "------ START UPOWER DUMP:"+str(time.ctime(time.time()))+"------"
+					for i in props:
+						print "   ",i,':',props[i];
+					
+					print "------ END ----";
 			
 				capacity = str(int(round(props['Capacity'])));
 			
@@ -201,9 +208,13 @@ class AdvancedBatteryIndicator:
 
 if __name__ == "__main__":
 	parser = OptionParser();
-	parser.add_option("--noconfig", action="store_true");
+	parser.add_option("--noconfig", action="store_true",dest="noConfig",help="Do not save or load config.");
+	parser.add_option("--noquit", action="store_true",dest="noQuitOption",help="Do not show 'Quit' menu option.");
+	parser.add_option("--debug", action="store_true", dest="debug",help="Show misc debug info.");
+	parser.add_option("--debugall", action="store_true", dest="debugAll",help="Show all debug info");
 	(options, args) = parser.parse_args();
-	
+	if options.debugAll:
+		options.debug = True;
 	gtk.gdk.threads_init();
 	indicator = AdvancedBatteryIndicator(options);	
 	gtk.gdk.threads_enter()
