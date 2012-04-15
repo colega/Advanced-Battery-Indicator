@@ -20,6 +20,8 @@ When charged: shows energy in the battery
 Configuration will be automatically saved into:
 	~/.config/advancedbatteryindicator/config.pickle
 Using python pickle module.
+You can deactivate the configuration (reading/writing) by the --noconfig
+option.
 
 - COPYRIGHT
 Copyright 2012 Oleg Zaytsev <lambroso@gmail.com>
