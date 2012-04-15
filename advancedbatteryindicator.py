@@ -24,19 +24,22 @@ import appindicator
 import os, time, threading
 import dbus;
 import pickle;
-
+from optparse import OptionParser
 
 class AdvancedBatteryIndicator:
-	def __init__(self):
+	def __init__(self, options):
+		self.options = options;
 		self.initDBus();
-		
+		print options.noconfig;
 		self.finished = threading.Event();
+		
 		self.loadConfig();
 		
 		self.createIndicator();
 		self.createMenu();
 		
 		self.startUpdater();
+		
 		
 	def createIndicator(self):
 		self.ind = appindicator.Indicator("example-simple-client", "indicator-battery", appindicator.CATEGORY_APPLICATION_STATUS);
@@ -69,13 +72,13 @@ class AdvancedBatteryIndicator:
 		radioWatts.connect("toggled", lambda e: self.prefs.__setitem__('watts',True));
 		formatSubMenu = gtk.Menu();
 		formatSubMenu.append(radioWatts);
-		if (self.prefs['watts'])
-			radioWatts.set_active();
+		if (self.prefs['watts']):
+			radioWatts.set_active(True);
 		radioMilliamperes = gtk.RadioMenuItem(radioWatts, "Milliamperes");
 		radioMilliamperes.connect("toggled", lambda e: self.prefs.__setitem__('watts',False));
 		formatSubMenu.append(radioMilliamperes);
-		if (not self.prefs['watts'])
-			radioMilliamperes.set_active();
+		if (not self.prefs['watts']):
+			radioMilliamperes.set_active(True);
 		formatMenuItem.set_submenu(formatSubMenu);
 		self.menu.append(formatMenuItem);
 		
@@ -88,7 +91,6 @@ class AdvancedBatteryIndicator:
 		updateLambdas = [lambda x,i=i: self.prefs.__setitem__('updateInterval',i) for i in updateIntervals]
 		for i in range(len(updateLabels)):
 			group = None;
-			print i;
 			if (i>0):
 				group = updateRadios[0];
 			updateRadio = gtk.RadioMenuItem(group, updateLabels[i])
@@ -196,12 +198,14 @@ class AdvancedBatteryIndicator:
 		
 	def main(self):
 		gtk.main();
-		
-		
 
 if __name__ == "__main__":
+	parser = OptionParser();
+	parser.add_option("--noconfig", action="store_true");
+	(options, args) = parser.parse_args();
+	
 	gtk.gdk.threads_init();
-	indicator = AdvancedBatteryIndicator();	
+	indicator = AdvancedBatteryIndicator(options);	
 	gtk.gdk.threads_enter()
 	indicator.main();
 	gtk.gdk.threads_leave()
