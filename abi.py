@@ -22,7 +22,8 @@
 import gtk, gobject
 import appindicator
 import os, time, threading
-import dbus
+import dbus;
+import pickle;
 
 
 class AdvancedBatteryIndicator:
@@ -30,8 +31,7 @@ class AdvancedBatteryIndicator:
 		self.initDBus();
 		
 		self.finished = threading.Event();
-		self.prefs = {'watts': True, 'updateInterval':0.5};
-		self.updateInterval = 1.0;
+		self.loadConfig();
 		
 		self.createIndicator();
 		self.createMenu();
@@ -57,7 +57,9 @@ class AdvancedBatteryIndicator:
 		self.menu.append(self.voltageMenuItem);
 		
 		self.healthMenuItem = gtk.MenuItem("Battery health: no data");
+		self.healthMenuItem.set_tooltip_text('Hoho');
 		self.menu.append(self.healthMenuItem);
+		
 		
 		separator = gtk.SeparatorMenuItem();
 		self.menu.append(separator);
@@ -74,28 +76,33 @@ class AdvancedBatteryIndicator:
 		formatMenuItem.set_submenu(formatSubMenu);
 		self.menu.append(formatMenuItem);
 		
+		print self.prefs;
+		
+		
 		updateIntervalMenuItem = gtk.MenuItem("Update interval");
 		updateIntervalSubMenu = gtk.Menu();
-		updateHalfSecond = gtk.RadioMenuItem(None, "0.5 seconds");
-		updateHalfSecond.connect("activate", lambda e: self.prefs.__setitem__('updateInterval',0.5));
-		updateIntervalSubMenu.append(updateHalfSecond);
-		updateOneSecond = gtk.RadioMenuItem(updateHalfSecond, "1 second");
-		updateOneSecond.connect("activate", lambda e: self.prefs.__setitem__('updateInterval',1.0));
-		updateOneSecond.activate();
-		updateIntervalSubMenu.append(updateOneSecond);
-		updateTwoSeconds = gtk.RadioMenuItem(updateHalfSecond, "2 seconds");
-		updateTwoSeconds.connect("activate", lambda e: self.prefs.__setitem__('updateInterval',2.0));
-		updateIntervalSubMenu.append(updateTwoSeconds);
-		updateThreeSeconds = gtk.RadioMenuItem(updateHalfSecond, "3 seconds");
-		updateThreeSeconds.connect("activate", lambda e: self.prefs.__setitem__('updateInterval',3.0));
-		updateIntervalSubMenu.append(updateThreeSeconds);
-		updateFiveSeconds = gtk.RadioMenuItem(updateHalfSecond, "5 seconds");
-		updateFiveSeconds.connect("activate", lambda e: self.prefs.__setitem__('updateInterval',5.0));
-		updateIntervalSubMenu.append(updateFiveSeconds);
+		
+		updateRadios = [];
+		updateLabels = ["0.5 seconds", "1 second", "2 seconds", "3 seconds", "5 seconds"];
+		updateIntervals = [0.5,1.0,2.0,3.0,5.0];
+		updateLambdas = [lambda x,i=i: self.prefs.__setitem__('updateInterval',i) for i in updateIntervals]
+		for i in range(len(updateLabels)):
+			group = None;
+			print i;
+			if (i>0):
+				group = updateRadios[0];
+			updateRadio = gtk.RadioMenuItem(group, updateLabels[i])
+			updateRadio.connect("toggled", updateLambdas[i]);
+			updateIntervalSubMenu.append(updateRadio);
+			if updateIntervals[i] == self.prefs['updateInterval']:
+				updateRadio.set_active(True);
+			updateRadios += [updateRadio];
+				
 		updateIntervalMenuItem.set_submenu(updateIntervalSubMenu);
-		updateOneSecond.activate();
 		self.menu.append(updateIntervalMenuItem);
 				
+		print self.prefs;
+		
 		separator2 = gtk.SeparatorMenuItem();
 		self.menu.append(separator2);
 		
@@ -122,9 +129,34 @@ class AdvancedBatteryIndicator:
 		self.format = 0;
 	
 	def quit(self, widget, data=None):
+		self.saveConfig();
 		self.finished.set();
 		gtk.main_quit();
-	
+		
+	def loadConfig(self):	
+		try:
+			f = open(os.path.expanduser('~/.config/advancedbatteryindicator/config.pickle'), 'r');
+			self.prefs = pickle.load(f);
+			f.close();
+		except:
+			print "Loading default config";
+			self.prefs = {'watts': True, 'updateInterval':0.5};
+		print self.prefs;
+		
+	def saveConfig(self):
+		try:
+			configDir = os.path.expanduser('~/.config/advancedbatteryindicator');
+			if not os.path.isdir(configDir):
+				os.makedirs(configDir);
+			f = open(configDir+'/config.pickle', 'w');
+			pickle.dump(self.prefs, f);
+			print "Configuration saved at "+configDir+'/config.pickle';
+			print self.prefs;
+			f.close();
+		except:
+			raise;
+			# TODO: What's going wrong?
+			print "Something went wrong while saving config...";
 	
 	def update(self):
 		while not self.finished.is_set():
@@ -137,7 +169,8 @@ class AdvancedBatteryIndicator:
 				self.noBatteryMenuSeparator.hide();
 				
 				for i in props:
-					print i,':',props[i];
+					pass;
+					#print i,':',props[i];
 			
 				capacity = str(int(round(props['Capacity'])));
 			
