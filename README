@@ -7,6 +7,10 @@ Just run abi.py to try.
 No installer yet, sorry, if you like it, you can manually add it to
 the Startup Applications in Ubuntu.
 
+- OPTIONS
+  You can see options by running:
+  	advancedbatteryindicator.py --help
+
 - INFORMATION
 When discharging: shows current energy consumption / energy left
 When charging: shows current energy / last full battery seen energy
