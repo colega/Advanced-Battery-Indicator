@@ -65,7 +65,7 @@ class AdvancedBatteryIndicator:
 			self.options.debug = True;
 		
 	def createIndicator(self):
-		self.ind = appindicator.Indicator("example-simple-client", "indicator-battery", appindicator.CATEGORY_APPLICATION_STATUS);
+		self.ind = appindicator.Indicator("Advanced-Battery-Indicator", "indicator-battery-energy", appindicator.CATEGORY_HARDWARE);
 		self.ind.set_status(appindicator.STATUS_ACTIVE);
 	
 	def runPowerStatistics(self,widget):
